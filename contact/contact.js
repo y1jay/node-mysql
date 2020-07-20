@@ -22,7 +22,7 @@ app.use("/api/v1/contact", contact);
 // 위의 에러를 처리하기 위해서, 에러 핸들러 연결
 app.use(errorHandler);
 // 환경설정 파일인, config.env파일에 있는 내용을 불러오는 방법.(||5000 안써도 되나 안전빵으로 쓰면 좋음)
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5200;
 
 app.listen(
   PORT,
