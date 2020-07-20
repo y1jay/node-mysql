@@ -6,7 +6,7 @@ const ErrorResponse = require("../utils/errorResponse");
 exports.getcontacts = async (req, res, next) => {
   try {
     const [rows, fields] = await connection.query(`select * from contact`);
-    res.status(200).json({ succese: true, items: rows });
+    res.status(400).json({ succese: true, items: rows });
   } catch (e) {
     next(new ErrorResponse("에러 발생", 418));
   }
