@@ -19,6 +19,7 @@ app.use(morgan("combined"));
 //함수 연결하는법, 미들웨어 연결
 //라우터 연결  : url의 path와 라우터 파일과 연결 중요!!!
 app.use("/api/v1/contact", contact);
+
 // 위의 에러를 처리하기 위해서, 에러 핸들러 연결
 app.use(errorHandler);
 // 환경설정 파일인, config.env파일에 있는 내용을 불러오는 방법.(||5000 안써도 되나 안전빵으로 쓰면 좋음)
