@@ -11,6 +11,7 @@ app.use(express.json());
 
 app.use("/api/v1/memos", memos);
 
+
 const PORT = process.env.PORT || 5100;
 
 app.listen(PORT, console.log("App listening on port 5100!"));

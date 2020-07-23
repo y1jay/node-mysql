@@ -1,5 +1,5 @@
 const connection = require("../db/mysql_connection");
-const ErrorResponse = require("../utils/errorResponse");
+// const ErrorResponse = require("../utils/errorResponse");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");

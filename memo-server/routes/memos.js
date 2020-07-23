@@ -6,11 +6,13 @@ const {
   createMemo,
   updateMemo,
   deleteMemo,
-  createUser,
+
 } = require("../controllers/memos");
-const { createUser } = require("../controllers/users");
+const { createUser, Login_user } = require("../controllers/users");
+
 
 router.route("/").get(getMemos).post(createMemo);
 router.route("/:id").put(updateMemo).delete(deleteMemo);
-router.route("/signup").post(createUser);
+router.route("/signUp").post(createUser);
+router.route("/logIn").post(Login_user)
 module.exports = router;
