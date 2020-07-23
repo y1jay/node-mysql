@@ -1,6 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const memos = require("./routes/memos");
+
 // 환경설정 파일 로딩
 dotenv.config({ path: "./config/config.env" });
 

@@ -1,11 +1,16 @@
 // express : 웹 서버를 동작시키는 프레임워크
+
+// npm 패키지 설치한 것들에 대한 require
 const express = require("express");
 const dotenv = require("dotenv");
 const morgan = require("morgan");
 
+// 미들웨어에 대한 require
 const logger = require("./middleware/logger");
 const errorHandler = require("./middleware/error");
+
 //우리가 만든 라우터 파일 가져온다.
+// router에 대한 require
 const bootcamps = require("./routes/bootcamps");
 const users = require("./routes/users");
 // 환경 설정 파일의 내용을 로딩한다. .env파일
@@ -16,9 +21,10 @@ const app = express();
 app.use(express.json());
 app.use(morgan("combined"));
 //줄줄이 연결하는 법
-app.use(function (req, res, next) {
-  res.status(503).send("사이트가 불법이라 잡혀갔습니다 그럼 20000");
-});
+// app.use(function (req, res, next) {
+//   res.status(503).send("사이트가 불법이라 잡혀갔습니다 그럼 20000");
+// });
+
 // 로그 찍는, 로거함수 만든다.
 //app.use 는 순서가 중요!! 순서대로 실행을 시킵니다. next()로
 //함수 연결하는법, 미들웨어 연결

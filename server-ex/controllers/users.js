@@ -142,23 +142,9 @@ exports.updatePasswd = async (req, res, next) => {
 // 유저의 id값으로 내정보를 가져오는 API 개발
 
 // @desc     내정보 가져오기
-// @route    GET/api/v1/users/:id
+// @route    GET/api/v1/users/
 
 exports.getMyInfo = async (req, res, next) => {
-  let id = req.params.id;
-
-  let query = `select * from user where id =${id}`;
-
-  try {
-    [rows] = await connection.query(query);
-    if (rows.length != 1) {
-      res.status(404).json({ succese: false });
-    } else {
-      //제이슨 객체에서,자바스크립트에서 내가 무언가를 빼고싶으면 delete 를 쓴다
-      delete rows[0].passwd;
-      res.status(200).json({ succese: true, result: rows[0] });
-    }
-  } catch (e) {
-    res.status(500).json({ succese: false, error: e });
-  }
+  // console.log("내정보 가져오기", req.user);
+  res.status(200).json({ succese: true, result: req.user });
 };
