@@ -7,7 +7,7 @@ const validator = require("validator");
 const bcrypt = require("bcrypt");
 
 // @desc     회원가입
-// @route    POST /api/v1/users
+// @route    POST /api/v1/users/signUp
 // @parameters  email, passwd
 exports.createUser = async (req, res, next) => {
   // 클라이언트로부터 이메일, 비번 받아서 변수로 만들자
@@ -44,7 +44,11 @@ exports.createUser = async (req, res, next) => {
   res.status(200).json({ success: true, token: token });
 };
 
-exports.Login_user = async (req, res, next)=>{
+// @desc     로그인
+// @route    POST /api/v1/users/logIn
+// @parameters  email, passwd
+// @response  success, token
+exports.Login_user = async (req, res, next) => {
   console.log("로그인 ");
   let email = req.body.email;
   let passwd = req.body.passwd;
@@ -54,19 +58,20 @@ exports.Login_user = async (req, res, next)=>{
   try {
     [rows] = await connection.query(query);
 
-      if (rows.length ==0) {
-        
-        res
-          .status(400)
-          .json({ success: false, message: "등록되지 않은 이메일입니다" });
-        return;
-      }
+    if (rows.length == 0) {
+      res
+        .status(400)
+        .json({ success: false, message: "등록되지 않은 이메일입니다" });
+      return;
+    }
     // 비밀번호 체크 : 비밀번호가 서로 맞는지 확인
     let savedPasswd = rows[0].passwd;
 
     const isMatch = await bcrypt.compare(passwd, savedPasswd);
     if (isMatch == false) {
-      res.status(400).json({ succese: false, result: isMatch });
+      res
+        .status(400)
+        .json({ succese: false, message: "비밀번호가 맞지 않습니다." });
       return;
     }
     let token = jwt.sign(
@@ -78,13 +83,26 @@ exports.Login_user = async (req, res, next)=>{
     try {
       [result] = await connection.query(query);
       res.status(200).json({ succese: true, result: isMatch, token: token });
-      
-    } catch(e) {
+      return;
+    } catch (e) {
       res.status(418).json({ error: e });
-     
+      return;
     }
-  } catch (e){
+  } catch (e) {
     res.status(401).json({ error: e });
+    return;
   }
+};
 
-}
+// @desc   내 정보 가져오는 API
+// @url    GET/api/v1/users/me
+// @request  x
+// @response id, email, created_at
+
+exports.my_info = (req, res, next) => {
+  // 인증 토큰 검증 통과해서 이 함수로 온다.
+
+  let user_info = req.user;
+
+  res.status(200).json({ succese: true, info: user_info });
+};
