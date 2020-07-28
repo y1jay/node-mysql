@@ -1,10 +1,11 @@
 const connection = require("../db/mysql_connection");
-// const ErrorResponse = require("../utils/errorResponse");
+const ErrorResponse = require("../utils/errorResponse");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+var crypto = require("crypto");
 const { query } = require("../db/mysql_connection");
-const sendEmail = require("../utils/sendmail");
+const sendEmail = require("../utils/sendMail");
 // @desc    회원가입
 // @route   POST /api/v1/users
 // @route   POST /api/v1/users/register
@@ -14,59 +15,60 @@ exports.createUser = async (req, res, next) => {
   let email = req.body.email;
   let passwd = req.body.passwd;
 
-  // 패스워드를 암호화 해서 넣어야 한다
-  // 비밀번호와 같은 것은, 단방향 암호화를 해야 한다.
-  // 그래야, 복호화가 안되어서, 안전하다.(복호화는 암호화한걸 원상태로 돌리는것)
-  // 1234(원문) => ****
-  // **** => 1234(원문)
-  // (passwd를 바꾼다 , 8이 가장 빠르다 )
+  // 비밀번호와 같은 것은,
+  // 단방향 암호화(복호화가 불가능)를 해야 한다.
+  // 그래야, 복호화가 안되어서, 안전하다.
+  // 1234(원문) => djsj32k2idhj23kkdsjaj  암호화
+  // djsj32k2idhj23kkdsjaj => 1234(원문)  복호화
   const hashedPasswd = await bcrypt.hash(passwd, 8);
 
-  // 이메일이 정상적인지 체크
+  // 이메일이 정상적인가 체크
   if (!validator.isEmail(email)) {
     res.status(500).json({ success: false });
     return;
   }
-
-  // 패스워드가 문자랑 숫자로만 되어있냐?
-  let query = `insert into user(email,passwd) values ("${email}","${hashedPasswd}")`;
+  // 유저 인서트
+  let query = "insert into user (email, passwd) values ? ";
+  let data = [email, hashedPasswd];
   let user_id;
   try {
-    [result] = await connection.query(query);
+    [result] = await connection.query(query, [[data]]);
     user_id = result.insertId;
-    // res.status(200).json({ succese: true, result: result });
   } catch (e) {
     if (e.errno == 1062) {
-      // 이메일 중복된 것이다.
-      res.status(401).json({ succese: false, errno: 1 });
+      // 이메일 중복된것 이다.
+      res
+        .status(400)
+        .json({ success: false, errno: 1, message: "이메일 중복" });
       return;
     } else {
-      res.status(500).json({ error: e });
+      res.status(500).json({ success: false, error: e });
       return;
     }
   }
+
   let token = jwt.sign({ user_id: user_id }, process.env.ACCESS_TOKEN_SECRET);
-  query = `insert into token (token,user_id) values("${token}",${user_id})`;
+
+  query = "insert into token (token, user_id) values ( ? , ? )";
+  data = [token, user_id];
 
   try {
-    [result] = await connection.query(query);
+    [result] = await connection.query(query, data);
 
-    const messsage = "환영하지않지않지를않고않습니다.";
+    const message = "환영합니다.";
     try {
       await sendEmail({
-        email: "tkdwls0712@naver.com",
-        subject: "회원가입 축하",
-        messsage: messsage,
+        email: email,
+        subject: "회원가입축하",
+        message: message,
       });
     } catch (e) {
-      // 에러남
-      res.status(418).json({ succese: false, result: result });
+      res.status(500).json({ success: false, error: e });
     }
 
-    res.status(200).json({ succese: true, result: result });
-    return;
+    res.status(200).json({ success: true, token: token });
   } catch (e) {
-    res.status(500).json({ succese: false, result: result });
+    res.status(500).json({ success: false, error: e });
   }
 };
 
@@ -239,5 +241,72 @@ exports.dethUser = async (req, res, next) => {
     res.status(500).json({ success: false, error: e });
   } finally {
     conn.release();
+  }
+};
+
+// 유저가 패스워드를 분실!
+
+// 1. 클라이언트가 패스워드 분실했다고 서버한테 요청
+//    서버가 패스워드를 변경할 수 있는 URL을 클라이언트한테 보내준다.
+//    (경로에 암호화된 문자열을 보내줍니다- 토큰역할)
+
+// @desc  패스워드 분실
+// @route POST  /api/v1/users/forgotpasswd
+exports.forgotPasswd = async (req, res, next) => {
+  let user = req.user;
+  // 암호화된 문자열 만드는 방법
+  const resetToken = crypto.randomBytes(20).toString("hex");
+  const resetPasswdToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  // 유저 테이블에, reset_passwd_token 컬럼에 저장.
+  let query = "update user set reset_passwd_token = ? where id = ? ";
+  let data = [resetPasswdToken, user.id];
+
+  try {
+    [result] = await connection.query(query, data);
+    user.reset_passwd_token = resetPasswdToken;
+    res.status(200).json({ success: true, data: user });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e });
+  }
+};
+// 2.  클라이언트는 해당 암호화된 주소를 받아서, 새로운 비밀번호를 함께
+//     서버로 보냅니다.
+//      서버는, 이 주소가 진짜 유효한지 확인해서, 새로운 비밀번호로 셋팅
+
+// @desc  리셋 패스워드 토큰을, 경로로 만들어서, 바꿀 비번과 함께 요청
+//        비번 초기화 ( reset passwd api )
+// @route  POST /api/v1/users/resetPAsswd/:resetPasswdToken
+
+exports.resetPasswd = async (req, res, next) => {
+  const resetPasswdToken = req.params.resetPasswdToken;
+  const user_id = req.user.id;
+
+  let query = `select * from user where id = ${user_id}`;
+
+  try {
+    [rows] = await connection.query(query);
+    savedResetPasswdToken = rows[0].reset_passwd_token;
+    if (savedResetPasswdToken !== resetPasswdToken) {
+      res.status(400).json({ succese: false });
+    }
+  } catch (e) {
+    res.status(500).json({ succese: false, error: e });
+    return;
+  }
+  let passwd = req.body.passwd;
+  const hashedPasswd = await bcrypt.hash(passwd, 8);
+  query = `update user set passwd = "${hashedPasswd}", reset_passwd_token = '' where id = ${user_id}`;
+
+  delete req.user.reset_passwd_token;
+
+  try {
+    [result] = await connection.query(query);
+    res.status(200).json({ succese: true, data: req.user });
+  } catch (e) {
+    res.status(500).json({ succese: false, error: e });
   }
 };
