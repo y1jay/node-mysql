@@ -2,10 +2,11 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const morgan = require("morgan");
-
+dotenv.config({ path: "./config/config.env" });
 //우리가 만든 라우터 파일 가져온다.
 const contact = require("./routes/contact");
 const user = require("./routes/users");
+const share = require("./routes/shared_contact");
 // 환경 설정 파일의 내용을 로딩한다. .env파일
 dotenv.config({ path: "./config/config.env" });
 
@@ -19,6 +20,7 @@ app.use(morgan("combined"));
 //라우터 연결  : url의 path와 라우터 파일과 연결 중요!!!
 app.use("/api/v1/contact", contact);
 app.use("/api/v1/user", user);
+app.use("/api/v1/share", share);
 // 위의 에러를 처리하기 위해서, 에러 핸들러 연결
 // 환경설정 파일인, config.env파일에 있는 내용을 불러오는 방법.(||5200 안써도 되나 안전빵으로 쓰면 좋음)
 const PORT = process.env.PORT || 5200;

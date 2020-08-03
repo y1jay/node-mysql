@@ -12,7 +12,7 @@ exports.getcontacts = async (req, res, next) => {
   let limit = req.query.limit;
   try {
     const [rows, fields] = await connection.query(
-      `select * from contact limit ${offset},${limit}`
+      `select*from contact where shared is null or shared=1 limit ${offset},${limit}`
     );
     let count = rows.length;
     res.status(200).json({ succese: true, items: rows, count: count });
@@ -39,64 +39,61 @@ exports.getcontacts = async (req, res, next) => {
 //   }
 // };
 
-// @desc    새로운 정보를 insert
-// @route   POST /api/v1/contact/
-// @access  Public
+//@ desc   연락처 추가
+//@ route   POST /api/v1/users/insert_phone
 
-exports.createcontact = async (req, res, next) => {
+exports.insert_phone = async (req, res, next) => {
+  let user_id = req.user.id;
   let name = req.body.name;
-  let phon_number = req.body.phon_number;
-  let memo = req.body.memo;
+  let number = req.body.number;
+  let shared = req.body.shared;
+
+  let query = `insert into contact(name,phone_number,user_id,shared) values ("${name}","${number}",${user_id},${shared})`;
 
   try {
-    [rows, fields] = await connection.query(
-      `insert into contact (name,phon_number,memo) values ("${name}","${phon_number}","${memo}")`
-    );
-
-    res.status(200).json({ succese: true, items: rows });
+    [rows] = await connection.query(query);
+    res.status(200).json({ success: true });
   } catch (e) {
-    next(new ErrorResponse("데헷 안됐지롱", 418));
+    res.status(500).json({ succese: false, error: e });
   }
 };
 
-// @desc    기존id에 있는 정보를 업데이트
-// @route   PUT /api/v1/contact/id
-// @access  Public
+//@ desc   연락처 수정
+//@ route   PUT /api/v1/users/update_phone
 
-exports.updatecontact = async (req, res, next) => {
+exports.update_phone = async (req, res, next) => {
+  let user_id = req.user.id;
+  let name = req.body.name;
+  let number = req.body.number;
+  let id = req.body.id;
+  let query = `update contact set name = "${name}", phone_number="${number}" where user_id = ${user_id} and id = ${id}`;
+
+  try {
+    [rows] = await connection.query(query);
+    res.status(200).json({ success: true });
+  } catch (e) {
+    res.status(500).json({ succese: false, error: e });
+  }
+};
+
+//@ desc   연락처 삭제
+//@ route   DELELE /api/v1/users/kill_you
+
+exports.delete_you = async (req, res, next) => {
+  let user_id = req.user.id;
   let id = req.params.id;
-  let name = req.body.name;
-  let phon_number = req.body.phon_number;
-  let memo = req.body.memo;
-  let query = `update contact set 
-  name = "${name}",
-  phon_number ="${phon_number}",
-  memo = "${memo}"
-   where id = ${id}`;
-  try {
-    [rows, fields] = await connection.query(query);
-    res.status(200).json({ succese: true, items: rows });
-  } catch (e) {
-    next(new ErrorResponse("안됐지롱", 418));
-  }
-};
 
-// @desc    기존id에 있는 정보를 삭제
-// @route   DELETE /api/v1/contact/id
-// @access  Public
+  let query = `delete from contact where user_id = ${user_id} and id = ${id}`;
 
-exports.deleltecontact = async (req, res, next) => {
-  let id = req.query.id;
-  let query = `delete from contact where id = ${id}`;
   try {
-    [result] = await connection.query(query);
-    if (result.affectedRows == 1) {
-      res.status(200).json({ succese: true });
-    } else {
-      return next(new ErrorResponse("안됐지롱", 418));
+    [rows] = await connection.query(query);
+    if (rows.affectedRows == 0) {
+      res.status(400).json({ message: "그런거 없어" });
+      return;
     }
+    res.status(200).json({ success: true });
   } catch (e) {
-    next(new ErrorResponse(" 안되지롱", 500));
+    res.status(500).json({ succese: false, error: e });
   }
 };
 
@@ -106,8 +103,8 @@ exports.deleltecontact = async (req, res, next) => {
 // @route GET/api/v1/contact/search?/ketword=67
 exports.searchcontact = async (req, res, next) => {
   let keyword = req.query.keyword;
-  console.log(keyword);
-  let query = `select * from contact where name like "%${keyword}%" or phon_number like "%${keyword}%"`;
+  let num = req.query.num;
+  let query = `select * from contact where name = "%${keyword}%" or phone_number = "%${num}%" and  shared is null and shared=0 `;
   try {
     [rows, fields] = await connection.query(query);
     res.status(200).json({ succese: true, items: rows });
@@ -117,5 +114,47 @@ exports.searchcontact = async (req, res, next) => {
       message: "DB ERROR",
       error: e,
     });
+  }
+};
+
+// @desc    내가 공유설정 한 연락처만 가져오기
+// @route   GET /api/v1/contact/getshared
+// @access  Public
+exports.getsharedcontacts = async (req, res, next) => {
+  let user_id = req.user.id;
+  let query = `select*from contact where shared = 1 and user_id = ${user_id}`;
+  try {
+    const [rows] = await connection.query(query);
+    let count = rows.length;
+    res.status(200).json({ succese: true, items: rows, count: count });
+  } catch (e) {
+    res.status(400).json({ error: e });
+  }
+};
+
+// @desc   공유설정 되어있는 연락처만 전부 가져오기
+// @route  GET/api/v1/contact/allshared
+
+exports.allshared = async (req, res, next) => {
+  let query = `select * from contact where shared = 1`;
+  try {
+    [result] = await connection.query(query);
+    res.status(200).json({ success: true, result: result });
+  } catch (e) {
+    res.status(400).json({ success: false, error: e });
+  }
+};
+
+// @desc   내 연락처 가져오기
+// @route  GET/api/v1/contact/mycontact
+
+exports.mycontact = async (req, res, next) => {
+  let user_id = req.user.id;
+  let query = `select * from contact where user_id = ${user_id}`;
+  try {
+    [rows] = await connection.query(query);
+    res.status(200).json({ success: true, rows: rows });
+  } catch (e) {
+    res.status(400).json({ success: false, error: e });
   }
 };

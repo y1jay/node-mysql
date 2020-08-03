@@ -10,7 +10,6 @@ const {
   resetPasswd,
   signUp,
   changePasswd,
-  // pick_contact,
 } = require("../controllers/users");
 
 const router = express.Router();
@@ -22,5 +21,5 @@ router.route("/logout").post(auth, Logout);
 router.route("/logoutall").post(auth, LogoutAll);
 router.route("/forgotpasswd").post(auth, forgotPasswd);
 router.route("/resetPasswd/:resetPasswdToken").post(auth, resetPasswd);
-// router.route("/share").post(auth, pick_contact);
+
 module.exports = router;
