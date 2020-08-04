@@ -1,5 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
+dotenv.config({ path: "./config/config.env" });
 // 파일 처리를 위한 라이브러리 임포트
 const fileupload = require("express-fileupload");
 const path = require("path");
@@ -10,7 +11,6 @@ const favorite = require("./routes/favorite");
 const reply = require("./routes/reply");
 const reservation = require("./routes/reservation");
 // 환경설정 파일 로딩
-dotenv.config({ path: "./config/config.env" });
 
 const app = express();
 // post 사용시, body 부분을 json 으로 사용하겠따.
