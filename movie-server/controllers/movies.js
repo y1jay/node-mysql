@@ -6,10 +6,10 @@ const connection = require("../db/mysql_connection");
 // @response  success : true , movie : rows
 exports.getMovies = async (req, res, next) => {
   let offset = req.query.offset;
-  let limit = req.query.limit;
+
   try {
     const [rows, fields] = await connection.query(
-      `select * from movie limit ${offset},${limit}`
+      `select * from movie limit ${offset},25`
     );
 
     res.status(200).json({ succese: true, movie: rows });

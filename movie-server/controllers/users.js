@@ -1,6 +1,6 @@
 const connection = require("../db/mysql_connection");
 const validator = require("validator");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 var crypto = require("crypto");
 const path = require("path");

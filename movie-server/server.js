@@ -28,7 +28,4 @@ app.use("/api/v1/reply", reply);
 app.use("/api/v1/reservation", reservation);
 const PORT = process.env.PORT || 5900;
 
-app.listen(
-  PORT,
-  console.log(`Server running in ${process.env.NODE_ENV}mode on port ${PORT}`)
-);
+app.listen(PORT, console.log(`Server running in  port 5900`));
